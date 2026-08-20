@@ -2,134 +2,166 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
+  TextInput,
+  ScrollView,
+  Dimensions,
   RefreshControl,
+  Image
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import api, { getToken, setToken } from '../services/api';
-import LoadingSpinner from '../components/LoadingSpinner';
+import api from '../services/api';
+import CafeCard from '../components/CafeCard';
+
+const { width } = Dimensions.get('window');
+
+// Komponen Card Kecil untuk Kategori
+const CategoryIcon = ({ icon, label, onPress }) => (
+  <TouchableOpacity 
+    onPress={onPress}
+    className="bg-white rounded-2xl p-4 items-center justify-center border border-slate-100 shadow-sm"
+    style={{ width: (width - 60) / 4 }}
+  >
+    <Text className="text-2xl mb-1">{icon}</Text>
+    <Text className="text-xs font-bold text-slate-700 text-center">{label}</Text>
+  </TouchableOpacity>
+);
 
 const HomeScreen = ({ navigation }) => {
-  const [cities, setCities] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [popularCafes, setPopularCafes] = useState([]);
+  const [budgetCafes, setBudgetCafes] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const fetchCities = async () => {
+  const fetchDiscoverData = async () => {
     try {
-      setError(null);
-      const response = await api.get('/cities');
-      setCities(response.data.cities);
+      const [popRes, budgetRes] = await Promise.all([
+        api.get('/cities/bandar-lampung/cafes?sort_by=popular'),
+        api.get('/cities/bandar-lampung/cafes?price_level=1&sort_by=rating')
+      ]);
+      setPopularCafes(popRes.data.cafes.data.slice(0, 10) || []);
+      setBudgetCafes(budgetRes.data.cafes.data.slice(0, 10) || []);
     } catch (err) {
-      setError('Gagal memuat data kota. Coba lagi nanti.');
+      console.log('Error fetching discover data', err);
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchCities();
+    fetchDiscoverData();
   }, []);
 
-  // Re-check token tiap kali screen ini balik ke fokus
-  // (misal setelah login/logout dari screen lain)
-  useFocusEffect(
-    useCallback(() => {
-      setIsLoggedIn(!!getToken());
-    }, [])
-  );
-
-  const onRefresh = () => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchCities();
-  };
+    fetchDiscoverData();
+  }, []);
 
-  const handleCityPress = (city) => {
-    navigation.navigate('CafeList', { citySlug: city.slug, cityName: city.name });
-  };
-
-  const handleAuthButtonPress = async () => {
-    if (isLoggedIn) {
-      try {
-        await api.post('/logout');
-      } catch (err) {
-        // token mungkin udah expired di server, tetap lanjut clear lokal
-      } finally {
-        await setToken(null);
-        setIsLoggedIn(false);
-      }
-    } else {
-      navigation.navigate('Login');
+  const handleSearchSubmit = () => {
+    if (searchQuery.trim() !== '') {
+      navigation.navigate('CafeList', { appliedFilters: { keyword: searchQuery } });
     }
   };
 
-  if (loading) {
-    return <LoadingSpinner message="Memuat daftar kota..." />;
-  }
+  const handleCategoryPress = (categoryId) => {
+    navigation.navigate('CafeList', { appliedFilters: { category: categoryId } });
+  };
 
-  if (error) {
+  const renderCarousel = (title, data, onViewAll) => {
+    if (!data || data.length === 0) return null;
     return (
-      <View className="flex-1 justify-center items-center p-8">
-        <Text className="text-base text-red-600 text-center">{error}</Text>
+      <View className="mt-6">
+        <View className="px-5 mb-3 flex-row justify-between items-end">
+          <Text className="text-xl font-extrabold text-slate-800">{title}</Text>
+          {onViewAll && (
+            <TouchableOpacity onPress={onViewAll}>
+              <Text className="text-amber-600 font-bold">Lihat Semua</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 20 }}
+          snapToInterval={width * 0.75 + 15}
+          decelerationRate="fast"
+          snapToAlignment="start"
+        >
+          {data.map((item, index) => (
+            <View key={`car-${item.slug}-${index}`} style={{ width: width * 0.75, marginRight: 15 }}>
+              <CafeCard cafe={item} onPress={() => navigation.navigate('CafeDetail', { cafeSlug: item.slug })} />
+            </View>
+          ))}
+        </ScrollView>
       </View>
     );
-  }
+  };
 
   return (
-    <View className="flex-1 bg-gray-100">
-      {/* Header */}
-      <View className="bg-[#5B4CCC] px-5 pt-12 pb-6 flex-row justify-between items-center">
-        <View className="flex-1 pr-3">
-          <Text className="text-4xl mb-1">☕</Text>
-          <Text className="text-[26px] font-extrabold text-white mb-1">SiCafe</Text>
-          <Text className="text-sm text-white/70">Temukan cafe favoritmu di kota-kota Indonesia</Text>
-        </View>
-        <TouchableOpacity
-          className={isLoggedIn ? 'bg-red-500 rounded-full py-3 px-6' : 'bg-sky-500 rounded-full py-3 px-6'}
-          onPress={handleAuthButtonPress}
-        >
-          <Text className="text-white font-bold text-center">
-            {isLoggedIn ? 'Logout' : 'Login'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+    <View className="flex-1 bg-slate-50">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D97706" />}
+      >
+        {/* Header and Search Box */}
+        <View className="bg-amber-600 px-5 pt-14 pb-8 rounded-b-3xl shadow-sm">
+          <Text className="text-3xl font-extrabold text-white mb-1">Hai, Penjelajah!</Text>
+          <Text className="text-amber-100 text-base mb-6">Mau nongkrong di mana hari ini?</Text>
 
-      {/* City List */}
-      <FlatList
-        data={cities}
-        keyExtractor={(item) => item.slug}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            className="bg-white rounded-xl p-4 mx-4 my-2 flex-row justify-between items-center"
-            style={{
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 6,
-              elevation: 3,
-            }}
-            onPress={() => handleCityPress(item)}
-            activeOpacity={0.7}
+          {/* Search Box */}
+          <TouchableOpacity 
+            className="flex-row items-center bg-white p-2 rounded-2xl shadow-lg border border-amber-500"
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate('CafeList', { appliedFilters: {} })} // Arahkan ke CafeList dengan filter kosong
           >
-            <View className="flex-1">
-              <Text className="text-lg font-bold text-gray-900">{item.name}</Text>
-            </View>
-            <Text className="text-gray-400 text-lg">›</Text>
+            <Text className="pl-3 pr-2 text-xl">🔍</Text>
+            <TextInput
+              className="flex-1 text-slate-700 font-semibold text-base py-3"
+              placeholder="Cari tempat nongkrong..."
+              placeholderTextColor="#94a3b8"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={handleSearchSubmit}
+              returnKeyType="search"
+            />
+            <TouchableOpacity 
+              className="bg-amber-100 rounded-xl p-3"
+              onPress={() => navigation.navigate('Filter', { currentFilters: {} })}
+            >
+              <Text className="text-amber-700 text-lg">🎚️</Text>
+            </TouchableOpacity>
           </TouchableOpacity>
+        </View>
+
+        {/* Category Grid */}
+        <View className="px-5 mt-6 flex-row justify-between">
+          <CategoryIcon icon="☕" label="Kafe" onPress={() => handleCategoryPress('cafe')} />
+          <CategoryIcon icon="🍵" label="Coffee Shop" onPress={() => handleCategoryPress('coffee_shop')} />
+          <CategoryIcon icon="💻" label="Coworking" onPress={() => handleCategoryPress('coworking')} />
+          <CategoryIcon icon="🍽️" label="Restoran" onPress={() => handleCategoryPress('restoran')} />
+        </View>
+
+        {/* Carousels */}
+        {renderCarousel(
+          "Rekomendasi Populer", 
+          popularCafes, 
+          () => navigation.navigate('CafeList', { appliedFilters: { sort_by: 'popular' } })
         )}
-        contentContainerStyle={{ paddingVertical: 8 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <View className="flex-1 justify-center items-center p-8">
-            <Text className="text-sm text-gray-400 text-center">Tidak ada kota ditemukan.</Text>
-          </View>
-        }
-      />
+        
+        {renderCarousel(
+          "Pilihan Hemat di Kantong", 
+          budgetCafes, 
+          () => navigation.navigate('CafeList', { appliedFilters: { price_level: 1, sort_by: 'rating' } })
+        )}
+
+        <TouchableOpacity 
+          className="mx-5 mt-8 mb-4 bg-amber-100 py-4 rounded-xl items-center border border-amber-200"
+          onPress={() => navigation.navigate('CafeList', { appliedFilters: {} })}
+        >
+          <Text className="font-bold text-amber-700 text-lg">Jelajahi Semua Tempat 🌍</Text>
+        </TouchableOpacity>
+        
+      </ScrollView>
     </View>
   );
 };

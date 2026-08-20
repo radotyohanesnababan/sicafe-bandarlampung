@@ -13,18 +13,55 @@ class CafeController extends Controller
 {
     /**
      * GET /api/cities/{city:slug}/cafes
-     * List semua cafe di kota tertentu.
+     * List semua cafe di kota tertentu dengan filter.
      */
-    public function index(City $city): JsonResponse
+    public function index(Request $request, City $city): JsonResponse
     {
-        $cafes = $city->cafes()
+        $query = $city->cafes()
+            ->with(['photos:id,cafe_id,path']) // Tetap eager load photos untuk hindari N+1 query
             ->select([
                 'id', 'city_id', 'name', 'slug', 'lat', 'lng',
                 'address', 'category', 'price_level', 'avg_rating',
-                'source',
-            ])
-            ->orderBy('name')
-            ->get();
+                'review_count', 'source',
+            ]);
+
+        // Filter Keyword
+        if ($request->filled('keyword')) {
+            $keyword = $request->keyword;
+            $query->where(function($q) use ($keyword) {
+                $q->where('name', 'like', "%{$keyword}%")
+                  ->orWhere('address', 'like', "%{$keyword}%");
+            });
+        }
+
+        // Filter Kategori
+        if ($request->filled('category') && $request->category !== 'all') {
+            $query->where('category', $request->category);
+        }
+
+        // Filter Kecamatan
+        if ($request->filled('kecamatan')) {
+            $query->where('address', 'like', "%{$request->kecamatan}%");
+        }
+
+        // Filter Tingkat Harga
+        if ($request->filled('price_level')) {
+            $query->where('price_level', $request->price_level);
+        }
+
+        // Sortir
+        $sortBy = $request->input('sort_by', 'popular');
+        if ($sortBy === 'rating') {
+            $query->orderBy('avg_rating', 'desc')->orderBy('review_count', 'desc');
+        } else {
+            // Default: popular
+            $query->orderBy('review_count', 'desc');
+        }
+
+        $cafes = $query->paginate(15);
+
+        // Tambahkan query parameter ke link pagination agar tidak hilang saat load page 2
+        $cafes->appends($request->all());
 
         return response()->json([
             'city'   => $city->only('name', 'slug'),

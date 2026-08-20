@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('phone', 50)->nullable();
             $table->string('opening_hours')->nullable();
             $table->string('website', 500)->nullable();
-            $table->enum('category', ['cafe', 'coffee_shop', 'coworking'])->default('cafe');
+            $table->enum('category', ['cafe', 'coffee_shop', 'coworking', 'restoran'])->default('cafe');
             $table->tinyInteger('price_level')->unsigned()->nullable()->comment('1-4');
             $table->decimal('avg_rating', 3, 2)->nullable()->comment('Internal rating cache');
             $table->integer('review_count')->default(0);

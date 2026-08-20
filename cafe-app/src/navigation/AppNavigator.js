@@ -1,21 +1,21 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import HomeScreen from '../screens/HomeScreen';
+import MainTabNavigator from '../navigation/MainTabNavigator';
 import CafeListScreen from '../screens/CafeListScreen';
 import CafeDetailScreen from '../screens/CafeDetailScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import LoginScreen from '../screens/LoginScreen';
-
+import FilterScreen from '../screens/FilterScreen';
 
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
   return (
     <Stack.Navigator
-      initialRouteName="Home"
+      initialRouteName="Main"
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#5B4CCC',
+          backgroundColor: '#D97706',
         },
         headerTintColor: '#ffffff',
         headerTitleStyle: {
@@ -34,8 +34,8 @@ const AppNavigator = () => {
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="Home"
-        component={HomeScreen}
+        name="Main"
+        component={MainTabNavigator}
         options={{ headerShown: false }}
       />
       <Stack.Screen
@@ -47,6 +47,11 @@ const AppNavigator = () => {
         name="CafeDetail"
         component={CafeDetailScreen}
         options={{ title: 'Detail Cafe' }}
+      />
+      <Stack.Screen
+        name="Filter"
+        component={FilterScreen}
+        options={{ title: 'Filter Pencarian', presentation: 'modal' }}
       />
     </Stack.Navigator>
   );

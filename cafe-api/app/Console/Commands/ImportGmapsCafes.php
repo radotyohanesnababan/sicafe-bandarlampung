@@ -73,10 +73,13 @@ class ImportGmapsCafes extends Command
             // Map category
             $raw_cat = strtolower($item['category'] ?? '');
             $category = 'cafe';
-            if (str_contains($raw_cat, 'kopi') || str_contains($raw_cat, 'coffee')) {
+            
+            if (str_contains($raw_cat, 'kopi') || str_contains($raw_cat, 'coffee') || str_contains($raw_cat, 'kedai')) {
                 $category = 'coffee_shop';
             } elseif (str_contains($raw_cat, 'coworking') || str_contains($raw_cat, 'space')) {
                 $category = 'coworking';
+            } elseif (str_contains($raw_cat, 'restoran') || str_contains($raw_cat, 'makan') || str_contains($raw_cat, 'ayam') || str_contains($raw_cat, 'sate') || str_contains($raw_cat, 'soto') || str_contains($raw_cat, 'bakso') || str_contains($raw_cat, 'seafood') || str_contains($raw_cat, 'pempek')) {
+                $category = 'restoran';
             }
 
             // Slug helper
@@ -106,7 +109,7 @@ class ImportGmapsCafes extends Command
                 }
 
                 // Create new
-                Cafe::create([
+                $cafe = Cafe::create([
                     'city_id' => $city->id,
                     'name' => $name,
                     'slug' => $slug,
@@ -119,6 +122,21 @@ class ImportGmapsCafes extends Command
                     'source' => 'gmaps',
                 ]);
                 $imported++;
+            }
+
+            // Sync photos
+            if (isset($item['photos']) && is_array($item['photos'])) {
+                foreach ($item['photos'] as $photo_url) {
+                    \Illuminate\Support\Facades\DB::table('cafe_photos')->updateOrInsert(
+                        [
+                            'cafe_id' => $cafe->id,
+                            'path' => $photo_url,
+                        ],
+                        [
+                            'created_at' => now()
+                        ]
+                    );
+                }
             }
         }
 
