@@ -30,6 +30,7 @@ const HomeScreen = ({ navigation }) => {
   const [popularCafes, setPopularCafes] = useState([]);
   const [budgetCafes, setBudgetCafes] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchDiscoverData = async () => {
@@ -44,6 +45,7 @@ const HomeScreen = ({ navigation }) => {
       console.log('Error fetching discover data', err);
     } finally {
       setRefreshing(false);
+      setInitialLoading(false);
     }
   };
 
@@ -66,7 +68,29 @@ const HomeScreen = ({ navigation }) => {
     navigation.navigate('CafeList', { appliedFilters: { category: categoryId } });
   };
 
-  const renderCarousel = (title, data, onViewAll) => {
+  const renderCarousel = (title, data, onViewAll, isLoading) => {
+    if (isLoading) {
+      return (
+        <View className="mt-6">
+          <View className="px-5 mb-3 flex-row justify-between items-end">
+            <Text className="text-xl font-extrabold text-slate-800">{title}</Text>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20 }}
+          >
+            {[1, 2].map((idx) => (
+              <View key={idx} style={{ width: width * 0.75, marginRight: 15 }} className="bg-white rounded-3xl mb-4 overflow-hidden shadow-sm border border-slate-100 p-4">
+                <View className="w-full h-32 bg-slate-200 rounded-2xl mb-4 animate-pulse" />
+                <View className="h-6 w-3/4 bg-slate-200 rounded animate-pulse mb-2" />
+                <View className="h-4 w-1/2 bg-slate-200 rounded animate-pulse" />
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      );
+    }
     if (!data || data.length === 0) return null;
     return (
       <View className="mt-6">
@@ -145,13 +169,15 @@ const HomeScreen = ({ navigation }) => {
         {renderCarousel(
           "Rekomendasi Populer", 
           popularCafes, 
-          () => navigation.navigate('CafeList', { appliedFilters: { sort_by: 'popular' } })
+          () => navigation.navigate('CafeList', { appliedFilters: { sort_by: 'popular' } }),
+          initialLoading
         )}
         
         {renderCarousel(
           "Pilihan Hemat di Kantong", 
           budgetCafes, 
-          () => navigation.navigate('CafeList', { appliedFilters: { price_level: 1, sort_by: 'rating' } })
+          () => navigation.navigate('CafeList', { appliedFilters: { price_level: 1, sort_by: 'rating' } }),
+          initialLoading
         )}
 
         <TouchableOpacity 

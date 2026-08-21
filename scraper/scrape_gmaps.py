@@ -88,9 +88,11 @@ def scrape_gmaps():
                         continue
                     name = name_el.inner_text()
                     
-                    # 2. Review Count
-                    review_count = 0
                     body_text = page.locator('body').inner_text()
+
+                    # 2. Review Count & Rating
+                    review_count = 0
+                    rating = 0.0
                     match = re.search(r'([\d\.,]+)\s+(?:ulasan|reviews)', body_text, re.IGNORECASE)
                     if match:
                         num_str = match.group(1).replace('.', '').replace(',', '')
@@ -103,8 +105,26 @@ def scrape_gmaps():
                             if num_str.isdigit() and int(num_str) < 50000:
                                 review_count = int(num_str)
                                 
-                    if review_count < 50:
-                        print(f"[-] {name} diabaikan (Review: {review_count} < 50)")
+                    rating_el = page.locator('span[aria-label*="bintang"], span[aria-label*="stars"]').first
+                    if rating_el.count() > 0:
+                        aria_label = rating_el.get_attribute('aria-label')
+                        if aria_label:
+                            rating_match = re.search(r'([\d\.,]+)', aria_label)
+                            if rating_match:
+                                try:
+                                    rating = float(rating_match.group(1).replace(',', '.'))
+                                except:
+                                    pass
+                    
+                    if rating == 0.0:
+                        match_rating = re.search(r'(\d[\.,]\d)\s*\(', body_text)
+                        if match_rating:
+                            try:
+                                rating = float(match_rating.group(1).replace(',', '.'))
+                            except:
+                                pass
+                    if review_count < 25:
+                        print(f"[-] {name} diabaikan (Review: {review_count} < 25)")
                         continue
                         
                     # 3. Photos
@@ -151,7 +171,34 @@ def scrape_gmaps():
                     address_el = page.locator('button[data-item-id="address"]').first
                     address = address_el.inner_text() if address_el.count() > 0 else ''
                     
-                    print(f"[+] Tersimpan: {name} | {category} | {review_count} ulasan")
+                    # 7. Jam Operasional
+                    hours_el = page.locator('div[aria-label^="Jam buka"], button[data-item-id="oh"]').first
+                    hours = hours_el.inner_text().replace('\n', ' ') if hours_el.count() > 0 else ''
+                    
+                    # 8. Nomor Telepon
+                    phone_el = page.locator('button[data-tooltip="Salin nomor telepon"], button[data-item-id^="phone:tel:"]').first
+                    phone = phone_el.inner_text().replace('\n', '') if phone_el.count() > 0 else ''
+                    
+                    # 9. Website
+                    web_el = page.locator('a[data-item-id="authority"]').first
+                    website = web_el.get_attribute('href') if web_el.count() > 0 else ''
+                    
+                    # 10. Tingkat Harga (Price Level)
+                    price_level = 0
+                    if '$$$$' in body_text: price_level = 4
+                    elif '$$$' in body_text: price_level = 3
+                    elif '$$' in body_text: price_level = 2
+                    elif '$' in body_text: price_level = 1
+                    
+                    # 11. Fasilitas (Amenities)
+                    amenities = []
+                    if "Bawa pulang" in body_text or "Takeaway" in body_text: amenities.append("Takeaway")
+                    if "Pesan antar" in body_text or "Delivery" in body_text: amenities.append("Delivery")
+                    if "Tempat duduk di luar ruangan" in body_text or "Outdoor" in body_text: amenities.append("Outdoor Seating")
+                    if "Wi-Fi" in body_text or "WiFi" in body_text: amenities.append("WiFi")
+                    if "Ramah anak" in body_text: amenities.append("Kids Friendly")
+                    
+                    print(f"[+] Tersimpan: {name} | Rating: {rating} | {review_count} ulasan")
                     
                     # Simpan ke dictionary menggunakan clean_href sebagai kunci
                     data_dict[clean_href] = {
@@ -160,7 +207,13 @@ def scrape_gmaps():
                         'lng': lng,
                         'address': address,
                         'category': category,
+                        'rating': rating,
                         'review_count': review_count,
+                        'hours': hours,
+                        'phone': phone,
+                        'website': website,
+                        'price_level': price_level,
+                        'amenities': amenities,
                         'photos': photo_urls,
                         'gmaps_url': href
                     }
@@ -174,10 +227,10 @@ def scrape_gmaps():
     data = list(data_dict.values())
     
     # Save to file
-    with open('cafes_gmaps.json', 'w', encoding='utf-8') as f:
+    with open('cafes_gmaps_v2.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
         
-    print(f"\nSelesai! {len(data)} tempat berhasil dikumpulkan dan disimpan ke cafes_gmaps.json")
+    print(f"\nSelesai! {len(data)} tempat berhasil dikumpulkan dan disimpan ke cafes_gmaps_v2.json")
 
 if __name__ == "__main__":
     scrape_gmaps()

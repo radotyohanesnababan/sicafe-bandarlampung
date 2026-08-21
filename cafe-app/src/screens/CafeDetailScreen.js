@@ -13,6 +13,17 @@ import {
 } from 'react-native';
 import LoadingSpinner from '../components/LoadingSpinner';
 
+const getAmenityIcon = (amenity) => {
+  const lower = amenity.toLowerCase();
+  if (lower.includes('wi-fi')) return '📶';
+  if (lower.includes('parkir')) return '🅿️';
+  if (lower.includes('toilet')) return '🚻';
+  if (lower.includes('makan')) return '🍽️';
+  if (lower.includes('bawa pulang')) return '🛍️';
+  if (lower.includes('pesan antar')) return '🛵';
+  return '✨';
+};
+
 const { width } = Dimensions.get('window');
 
 const CafeDetailScreen = ({ route, navigation }) => {
@@ -107,7 +118,29 @@ const CafeDetailScreen = ({ route, navigation }) => {
   };
 
   if (loading) {
-    return <LoadingSpinner message="Memuat detail cafe..." />;
+    return (
+      <View className="flex-1 bg-slate-50">
+        {/* Image Skeleton */}
+        <View className="bg-slate-200 h-[320px] w-full animate-pulse" />
+        {/* Main Info Skeleton */}
+        <View className="bg-white rounded-t-3xl -mt-6 pt-6 px-5 pb-5">
+          <View className="h-8 bg-slate-200 w-3/4 rounded animate-pulse mb-4" />
+          <View className="flex-row items-center mb-4">
+            <View className="h-6 w-20 bg-slate-200 rounded-full animate-pulse mr-3" />
+            <View className="h-6 w-24 bg-slate-200 rounded animate-pulse" />
+          </View>
+          <View className="h-12 w-full bg-slate-200 rounded-xl animate-pulse mt-2" />
+        </View>
+        {/* Amenities Skeleton */}
+        <View className="bg-white mt-2 px-5 py-6">
+          <View className="h-6 bg-slate-200 w-1/3 rounded animate-pulse mb-4" />
+          <View className="flex-row">
+            <View className="h-10 w-24 bg-slate-200 rounded-full animate-pulse mr-2" />
+            <View className="h-10 w-32 bg-slate-200 rounded-full animate-pulse mr-2" />
+          </View>
+        </View>
+      </View>
+    );
   }
 
   if (error) {
@@ -126,6 +159,15 @@ const CafeDetailScreen = ({ route, navigation }) => {
     coffee_shop: 'Coffee Shop',
     coworking: 'Coworking',
   };
+
+  let parsedAmenities = [];
+  try {
+    if (typeof cafe.amenities === 'string') {
+      parsedAmenities = JSON.parse(cafe.amenities) || [];
+    } else if (Array.isArray(cafe.amenities)) {
+      parsedAmenities = cafe.amenities;
+    }
+  } catch(e) {}
 
   return (
     <View className="flex-1 bg-slate-50">
@@ -198,9 +240,13 @@ const CafeDetailScreen = ({ route, navigation }) => {
               <View className="flex-row items-center">
                 <Text className="text-amber-500 font-bold mr-1">★</Text>
                 <Text className="text-sm font-bold text-slate-700 mr-1">
-                  {cafe.review_count ? `${(cafe.review_count/1000).toFixed(1)}k` : Number(cafe.avg_rating).toFixed(1)}
+                  {Number(cafe.avg_rating).toFixed(1)}
                 </Text>
-                <Text className="text-xs text-slate-400">ulasan</Text>
+                {cafe.review_count > 0 && (
+                  <Text className="text-xs text-slate-400">
+                    ({cafe.review_count >= 1000 ? `${(cafe.review_count/1000).toFixed(1)}k` : cafe.review_count} ulasan)
+                  </Text>
+                )}
               </View>
             )}
             
@@ -224,6 +270,21 @@ const CafeDetailScreen = ({ route, navigation }) => {
           )}
         </View>
 
+        {/* Amenities / Fasilitas */}
+        {parsedAmenities.length > 0 && (
+          <View className="bg-white mt-2 px-5 py-6">
+            <Text className="text-lg font-bold text-slate-800 mb-4">Fasilitas Utama</Text>
+            <View className="flex-row flex-wrap">
+              {parsedAmenities.map((amenity, idx) => (
+                <View key={idx} className="bg-slate-50 border border-slate-200 rounded-full px-4 py-2 mr-2 mb-3 flex-row items-center">
+                  <Text className="text-sm mr-2">{getAmenityIcon(amenity)}</Text>
+                  <Text className="text-sm font-medium text-slate-700">{amenity}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Detail Grid / List */}
         <View className="bg-white mt-2 px-5 py-5">
           <Text className="text-lg font-bold text-slate-800 mb-4">Informasi</Text>
@@ -239,13 +300,24 @@ const CafeDetailScreen = ({ route, navigation }) => {
           )}
 
           {cafe.phone && (
-            <View className="flex-row mb-4">
-              <View className="w-8 items-center mr-2"><Text className="text-xl">📞</Text></View>
-              <View className="flex-1">
-                <Text className="text-xs text-slate-400 font-semibold mb-0.5">Telepon</Text>
-                <Text className="text-slate-700">{cafe.phone}</Text>
+            <TouchableOpacity 
+              className="flex-row items-center mb-4"
+              onPress={() => {
+                const cleanPhone = cafe.phone.replace(/[^0-9]/g, '');
+                // Convert 08... to 628...
+                const waNumber = cleanPhone.startsWith('0') ? '62' + cleanPhone.substring(1) : cleanPhone;
+                Linking.openURL(`https://wa.me/${waNumber}`);
+              }}
+              activeOpacity={0.7}
+            >
+              <View className="w-10 h-10 bg-amber-50 rounded-full items-center justify-center mr-3">
+                <Text className="text-emerald-500 text-lg">💬</Text>
               </View>
-            </View>
+              <View>
+                <Text className="text-slate-700 font-medium text-base">{cafe.phone}</Text>
+                <Text className="text-emerald-600 text-xs mt-0.5">Hubungi via WhatsApp</Text>
+              </View>
+            </TouchableOpacity>
           )}
 
           {cafe.opening_hours && (

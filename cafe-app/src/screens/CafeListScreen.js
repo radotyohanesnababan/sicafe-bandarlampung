@@ -9,8 +9,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import api from '../services/api';
-import LoadingSpinner from '../components/LoadingSpinner';
 import CafeCard from '../components/CafeCard';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const CafeListScreen = ({ navigation, route }) => {
   const initialFilters = route.params?.appliedFilters || {};
@@ -98,7 +98,7 @@ const CafeListScreen = ({ navigation, route }) => {
   return (
     <View className="flex-1 bg-slate-50">
       {/* Search Header */}
-      <View className="bg-amber-600 px-5 pt-12 pb-4 rounded-b-2xl shadow-sm z-10">
+      <View className="bg-amber-600 px-5 pt-12 pb-4 rounded-b-2xl z-10" style={{ elevation: 3, shadowColor: '#000', shadowOffset: {width: 0, height: 2}, shadowOpacity: 0.1, shadowRadius: 3 }}>
         <View className="flex-row items-center mb-3">
           <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
             <Text className="text-white text-2xl font-bold">←</Text>

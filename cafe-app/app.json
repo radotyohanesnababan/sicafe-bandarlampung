@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "cafe-app",
-    "slug": "cafe-app",
+    "name": "Sicafe BL",
+    "slug": "sicafe-bl",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.jpg",
@@ -15,6 +15,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.radotyohanes.sicafebl",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/icon.jpg"
@@ -24,7 +25,9 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "apiBaseUrl": "http://10.231.76.78:8000/api"
+      "eas": {
+        "projectId": "c27fae82-198b-4ced-b728-c66adc2b3fa5"
+      }
     },
     "plugins": [
       "expo-status-bar",

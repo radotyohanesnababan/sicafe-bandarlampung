@@ -2,10 +2,7 @@ import axios from 'axios';
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 
-const BASE_URL =
-  Constants.expoConfig?.extra?.apiBaseUrl ||
-  Constants.manifest?.extra?.apiBaseUrl ||
-  'http://10.231.76.78:8000/api';
+const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8000/api';
 
 
 console.log('BASE_URL:', BASE_URL);
@@ -35,6 +32,7 @@ const api = axios.create({
 // Request interceptor — attach Bearer token if present
 api.interceptors.request.use(
   (config) => {
+    console.log('API Request:', config.baseURL + config.url);
     if (authToken) {
       config.headers.Authorization = `Bearer ${authToken}`;
     }
@@ -47,7 +45,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', error.message);
+    console.error('API Error:', error.message, error.response?.data);
     return Promise.reject(error);
   }
 );

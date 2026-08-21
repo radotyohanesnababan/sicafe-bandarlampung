@@ -30,8 +30,8 @@ class ImportGmapsCafes extends Command
         $file = $this->argument('file');
         
         if (!$file) {
-            // Default path assuming the scraper is in sibling directory 'scraper'
-            $file = base_path('../scraper/cafes_gmaps.json');
+            // Default path di dalam database/scraper
+            $file = database_path('scraper/cafes_gmaps.json');
         }
 
         if (!File::exists($file)) {
@@ -41,7 +41,13 @@ class ImportGmapsCafes extends Command
 
         $this->info("Reading data from {$file}");
         
-        $json = File::get($file);
+        try {
+            $json = File::get($file);
+        } catch (\Exception $e) {
+            $this->error("Error membaca file: " . $e->getMessage());
+            return;
+        }
+
         $data = json_decode($json, true);
 
         if (!$data) {
@@ -60,9 +66,10 @@ class ImportGmapsCafes extends Command
             ['name' => 'Bandar Lampung', 'slug' => 'bandar-lampung', 'lat' => -5.4254, 'lng' => 105.2580] // Provide default fields if needed
         );
 
-        foreach ($data as $item) {
-            $name = $item['name'] ?? null;
-            $lat = $item['lat'] ?? null;
+        \Illuminate\Support\Facades\DB::transaction(function () use ($data, $city, &$imported, &$updated) {
+            foreach ($data as $item) {
+                $name = $item['name'] ?? null;
+                $lat = $item['lat'] ?? null;
             $lng = $item['lng'] ?? null;
             
             if (!$name || !$lat || !$lng) {
@@ -100,6 +107,12 @@ class ImportGmapsCafes extends Command
                     'review_count' => $item['review_count'] ?? $cafe->review_count,
                     'gmaps_url' => $item['gmaps_url'] ?? $cafe->gmaps_url,
                     'source' => 'gmaps',
+                    'avg_rating' => $item['rating'] ?? $cafe->avg_rating,
+                    'opening_hours' => $item['hours'] ?? $cafe->opening_hours,
+                    'phone' => $item['phone'] ?? $cafe->phone,
+                    'website' => $item['website'] ?? $cafe->website,
+                    'price_level' => $item['price_level'] ?? $cafe->price_level,
+                    'amenities' => $item['amenities'] ?? $cafe->amenities,
                 ]);
                 $updated++;
             } else {
@@ -120,6 +133,12 @@ class ImportGmapsCafes extends Command
                     'review_count' => $item['review_count'] ?? 0,
                     'gmaps_url' => $item['gmaps_url'] ?? null,
                     'source' => 'gmaps',
+                    'avg_rating' => $item['rating'] ?? null,
+                    'opening_hours' => $item['hours'] ?? null,
+                    'phone' => $item['phone'] ?? null,
+                    'website' => $item['website'] ?? null,
+                    'price_level' => $item['price_level'] ?? 0,
+                    'amenities' => $item['amenities'] ?? null,
                 ]);
                 $imported++;
             }
@@ -139,6 +158,7 @@ class ImportGmapsCafes extends Command
                 }
             }
         }
+        });
 
         $this->info("Import finished! Created: {$imported}, Updated: {$updated}");
     }

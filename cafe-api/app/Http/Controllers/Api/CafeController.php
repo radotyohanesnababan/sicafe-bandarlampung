@@ -22,7 +22,7 @@ class CafeController extends Controller
             ->select([
                 'id', 'city_id', 'name', 'slug', 'lat', 'lng',
                 'address', 'category', 'price_level', 'avg_rating',
-                'review_count', 'source',
+                'review_count', 'source', 'amenities', 'opening_hours', 'phone',
             ]);
 
         // Filter Keyword

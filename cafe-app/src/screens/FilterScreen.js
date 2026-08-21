@@ -22,16 +22,14 @@ const FilterScreen = ({ navigation, route }) => {
   const [category, setCategory] = useState(currentFilters.category || 'all');
   const [kecamatan, setKecamatan] = useState(currentFilters.kecamatan || '');
   const [priceLevel, setPriceLevel] = useState(currentFilters.price_level || '');
-  const [sortBy, setSortBy] = useState(currentFilters.sort_by || 'popular');
 
   const handleApply = () => {
-    // Kirim filter yang dipilih ke CafeListScreen
-    navigation.navigate('CafeList', {
+    navigation.replace('CafeList', {
       appliedFilters: {
         category,
         kecamatan,
         price_level: priceLevel,
-        sort_by: sortBy
+        sort_by: 'popular'
       }
     });
   };
@@ -40,31 +38,13 @@ const FilterScreen = ({ navigation, route }) => {
     setCategory('all');
     setKecamatan('');
     setPriceLevel('');
-    setSortBy('popular');
   };
 
   return (
     <View className="flex-1 bg-slate-50">
       <ScrollView className="flex-1 px-5 pt-6 pb-20">
         
-        {/* Sort By */}
-        <Text className="text-lg font-bold text-slate-800 mb-3">Urutkan Berdasarkan</Text>
-        <View className="flex-row mb-8 bg-slate-200 rounded-lg p-1">
-          <TouchableOpacity 
-            className={`flex-1 py-2 items-center rounded-md ${sortBy === 'popular' ? 'bg-white shadow-sm' : ''}`}
-            onPress={() => setSortBy('popular')}
-          >
-            <Text className={`font-bold ${sortBy === 'popular' ? 'text-amber-600' : 'text-slate-500'}`}>Paling Populer</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            className={`flex-1 py-2 items-center rounded-md ${sortBy === 'rating' ? 'bg-white shadow-sm' : ''}`}
-            onPress={() => setSortBy('rating')}
-          >
-            <Text className={`font-bold ${sortBy === 'rating' ? 'text-amber-600' : 'text-slate-500'}`}>Rating Tertinggi</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Category */}
+        {/* Kategori */}
         <Text className="text-lg font-bold text-slate-800 mb-3">Kategori</Text>
         <View className="flex-row flex-wrap mb-6">
           {CATEGORIES.map(cat => (

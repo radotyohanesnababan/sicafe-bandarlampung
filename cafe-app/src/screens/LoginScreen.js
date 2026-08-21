@@ -54,7 +54,6 @@ const LoginScreen = ({ navigation }) => {
         <View className="bg-white/20 p-5 rounded-full mb-4">
           <Text className="text-6xl">☕</Text>
         </View>
-        <Text className="text-3xl font-extrabold text-white mb-2 tracking-wide">SiCafe</Text>
         <Text className="text-base text-amber-100 font-medium px-10 text-center">
           Tempat terbaik untuk menemukan kopi favoritmu di Bandar Lampung.
         </Text>

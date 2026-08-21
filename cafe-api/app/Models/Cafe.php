@@ -29,6 +29,7 @@ class Cafe extends Model
         'source',
         'gmaps_url',
         'last_synced_at',
+        'amenities',
     ];
 
     protected $hidden = [
@@ -45,6 +46,7 @@ class Cafe extends Model
             'price_level'  => 'integer',
             'avg_rating'   => 'decimal:2',
             'last_synced_at' => 'datetime',
+            'amenities'    => 'array',
         ];
     }
 
