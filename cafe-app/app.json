@@ -32,6 +32,12 @@
     "plugins": [
       "expo-status-bar",
       "expo-secure-store"
-    ]
+    ],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c27fae82-198b-4ced-b728-c66adc2b3fa5"
+    }
   }
 }

@@ -31,7 +31,7 @@ class ImportGmapsCafes extends Command
         
         if (!$file) {
             // Default path di dalam database/scraper
-            $file = database_path('scraper/cafes_gmaps.json');
+            $file = database_path('scraper/cafes_gmaps_v2.json');
         }
 
         if (!File::exists($file)) {
